@@ -6,25 +6,23 @@ import java.awt.event.ActionListener;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-
 import javax.swing.*;
-//import javax.swing.table.DefaultTableModel;
 import javax.swing.border.Border;
-
+import javax.swing.table.DefaultTableModel;
 import dao.*;
 import model.*;
 
-public class DisplayListChoiceEtudiant {
+public class DisplayListChoiceDominate {
 	
 	protected JFrame mainFrame;
 	private static JLabel clockLabel;
-	private ArrayList<Choix> list ;
-	private JTextArea resultArea;
+	private JTable table;
+	private DefaultTableModel tableModel;
 	
 	/**
 	 * Create the application.
 	 */
-	public DisplayListChoiceEtudiant() {
+	public DisplayListChoiceDominate() {
 		initialize();
 	}
 	
@@ -47,14 +45,14 @@ public class DisplayListChoiceEtudiant {
 	}
 	
 	/**
-	 * Launch the application.
-	 */
+	* Launch the application.
+	*/
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					DisplayListChoiceEtudiant window = new DisplayListChoiceEtudiant();
+					DisplayListChoiceDominate window = new DisplayListChoiceDominate();
 					window.mainFrame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -62,6 +60,7 @@ public class DisplayListChoiceEtudiant {
 			}
 		});
 	}
+	
 	
 	private void initialize() {
 		mainFrame = new JFrame();
@@ -74,7 +73,7 @@ public class DisplayListChoiceEtudiant {
 		mainFrame.getContentPane().add(panelPrincipal);
 		
 		GridBagConstraints gbcPrincipal = new GridBagConstraints();
-		gbcPrincipal.insets = new Insets(5, 15, 20, 15);
+		gbcPrincipal.insets = new Insets(5, 10, 10, 10);
 		gbcPrincipal.anchor = GridBagConstraints.CENTER;
 		
 		updateTime();
@@ -99,11 +98,10 @@ public class DisplayListChoiceEtudiant {
 		panelHeader.add(image);
 		
 		JLabel title = new JLabel();
-		title.setText("CONSULTER LES CHOIX D'UN ETUDIANT");
+		title.setText("LISTE DES CHOIX PAR DOMINANTE");
 		title.setForeground(Color.WHITE);
-		title.setFont(new Font("Arial", Font.BOLD, 30));
+		title.setFont(new Font("Arial", Font.BOLD, 25));
 		gbcPrincipal.gridy = 2;
-		panelPrincipal.add(title, gbcPrincipal);
 		
 		JPanel panelSearch = new JPanel();
 		panelSearch.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 0));
@@ -111,45 +109,15 @@ public class DisplayListChoiceEtudiant {
 		gbcPrincipal.gridy = 3;
 		panelPrincipal.add(panelSearch, gbcPrincipal);
 		
-		TransparantPanel panelDisplayChoice = new TransparantPanel();
-		panelDisplayChoice.setOpaque(false);// Rendre le panneau non opaque pour permettre la transparence
-		panelDisplayChoice.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Espacement des bords
-		gbcPrincipal.gridy = 4;
-		panelPrincipal.add(panelDisplayChoice, gbcPrincipal);
+		JLabel labelDominante = new JLabel();
+		labelDominante.setText("Sélectionnez la dominante : ");
+		labelDominante.setForeground(Color.WHITE);
+		labelDominante.setFont(new Font("Arial", Font.BOLD, 20));
+		panelSearch.add(labelDominante);
 		
-		resultArea = new JTextArea(6, 22);
-		resultArea.setOpaque(false);  //ca peut ne pas prendre 
-		resultArea.setBorder(null);  //ca peut ne pas prendre 
-		resultArea.setEditable(false);
-		resultArea.setForeground(Color.WHITE); 
-		resultArea.setFont(new Font("Arial", Font.BOLD, 18));
-		JScrollPane scrollPane = new JScrollPane(resultArea);
-		scrollPane.setOpaque(false); //ca peut ne pas prendre 
-		scrollPane.getViewport().setOpaque(false);
-		scrollPane.setBorder(null);  // optionnel
-		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		//gbcPrincipal.gridy = 4;
-		panelDisplayChoice.add(scrollPane);
-		
-		JLabel labelID = new JLabel();
-		labelID.setText("Entrez l'id étudiant : ");
-		labelID.setForeground(Color.WHITE);
-		labelID.setFont(new Font("Arial", Font.BOLD, 20));
-		panelSearch.add(labelID);
-		
-		JTextField fieldId = new JTextField();
-		fieldId.setColumns(10);
-		panelSearch.add(fieldId);
-		
-		/*String[] columnNames = {"ID Étudiant", "ID Dominante", "Ordre", "Validation"};
-		tableModel = new DefaultTableModel(columnNames, 0); // 0 lignes au départ
-		table = new JTable(tableModel);
-		table.setFillsViewportHeight(true);
-		table.setPreferredScrollableViewportSize(new Dimension(600, 150));
-		654823
-		JScrollPane scrollPane = new JScrollPane(table);
-		gbcPrincipal.gridy = 3; // en dessous du bouton déconnexion
-		panelPrincipal.add(scrollPane, gbcPrincipal);*/
+		JComboBox<String> fieldChoixSigleDominante = new JComboBox<>(getSigleDominante());
+		fieldChoixSigleDominante.setPreferredSize(new Dimension(120, 25));
+		panelSearch.add(fieldChoixSigleDominante);
 		
 		JButton searchButton = new JButton("Consulter choix"); 
 		searchButton.setBackground(Color.BLUE);
@@ -158,60 +126,41 @@ public class DisplayListChoiceEtudiant {
 		searchButton.setFont(new Font("Arial", Font.BOLD, 18));
 		searchButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if(fieldId.getText().length() > 0) {
-					try {
-		                int id = Integer.parseInt(fieldId.getText());
-		                DisplayListChoiceEtudiant.this.list = consulterChoix(id);
-
-		                if(list != null && !list.isEmpty()) {
-		                	// Affichage dans la JTextArea
-			                StringBuilder sb = new StringBuilder();
-			                sb.append(String.format("%-8s %-14s %-12s%n", "Ordre", "Dominante", "Statut"));
-			                sb.append("-----------------------------------------------\n");
-			                
-			                String[] sigleDominante = getSigleDominante();
-			                
-			                for(int i = 0; i < list.size(); i++) {
-			                	Choix c = list.get(i);
-			                	sb.append(String.format("%-12d %-18s %-12s%n",
-			                    		c.getNumeroOrdre(),
-			                    		sigleDominante[i+1],
-			                            c.getValidation())
-			                	);
-			                }
-
-			                resultArea.setText(sb.toString());
-		                }else {
-		                	JOptionPane.showMessageDialog(new JFrame(), "Cet étudiant n'a éffectué aucun choix", "Dialog",
-		        					JOptionPane.INFORMATION_MESSAGE);
-		                }
-
-		            } catch (NumberFormatException ex) {
-		                JOptionPane.showMessageDialog(mainFrame, "Veuillez entrer un ID valide.", "Erreur", JOptionPane.ERROR_MESSAGE);
-		            }
-					/*int id = Integer.parseInt(fieldId.getText());
-					DisplayListChoiceEtudiant.this.list = consulterChoix(id);
-					
+				String dominante = (String)fieldChoixSigleDominante.getSelectedItem();
+				if(!dominante.isBlank()) {
 					tableModel.setRowCount(0);
-					
-					for(Choix c : list) {
-						Object[] row = {
-							c.getChoixIdEtudiant(),
-							c.getChoixIdDominante(),
-							c.getNumeroOrdre(),
-							c.getValidation()
-						};
-						tableModel.addRow(row);
-					}*/
-			
-				}else {
-					JOptionPane.showMessageDialog(new JFrame(), "Entrer l'id de l'étudiant", "Dialog",
-							JOptionPane.ERROR_MESSAGE);
+					ArrayList<Choix> list = consulterChoix(dominante);
+					if(!list.isEmpty() && list != null) {
+						for(Choix c : list) {
+							Object[] row = {
+								c.getChoixIdEtudiant(),
+								c.getNumeroOrdre(),
+								c.getValidation()
+							};
+							tableModel.addRow(row);
+						}
+					}else {
+						JOptionPane.showMessageDialog(new JFrame(), "Cette dominante n'a pas encore été choisie ", "Dialog",
+								JOptionPane.INFORMATION_MESSAGE);
+					}
 				}
 			}
 		});
 		panelSearch.add(searchButton);
 		
+		TransparantPanel panelDisplayChoice = new TransparantPanel();
+		panelDisplayChoice.setOpaque(false);// Rendre le panneau non opaque pour permettre la transparence
+		panelDisplayChoice.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Espacement des bords
+		gbcPrincipal.gridy = 4;
+		panelPrincipal.add(panelDisplayChoice, gbcPrincipal);
+		
+		String[] columnNames = {"ID Étudiant", "Ordre", "Validation"};
+		tableModel = new DefaultTableModel(columnNames, 0);
+		table = new JTable(tableModel);
+		table.setFillsViewportHeight(true);
+		table.setPreferredScrollableViewportSize(new Dimension(400, 150));
+		JScrollPane scrollPane = new JScrollPane(table);
+		panelDisplayChoice.add(scrollPane);
 		
 		JButton deconnexionBtn = new JButton("Retour à la page d'accueil");
 		deconnexionBtn.setBackground(Color.BLACK);
@@ -226,8 +175,8 @@ public class DisplayListChoiceEtudiant {
 			}
 		});
 		panelPrincipal.add(deconnexionBtn, gbcPrincipal);
-				
 	}
+	
 	
 	//Pour arrondir les bordures de mon bouton code trouvé sure une plateforme de 
 	// formation java
@@ -244,7 +193,7 @@ public class DisplayListChoiceEtudiant {
 		}	    
 		public void paintBorder(Component c, Graphics g, int x, int y, 
 			int width, int height) {
-	            g.drawRoundRect(x, y, width-1, height-1, r, r);
+		           g.drawRoundRect(x, y, width-1, height-1, r, r);
 		}
 	}
 	
@@ -268,30 +217,29 @@ public class DisplayListChoiceEtudiant {
 		return tableauNomDominante;
 	}
 	
+	
 	/**
 	 * Premet de récupérer la liste des choix d'un étudiant dans la table choix
 	 * @param id
 	 * @return ArrayList<Choix> listChoixEtudiant;
 	 */
-	public ArrayList<Choix> consulterChoix(int id) {
+	public ArrayList<Choix> consulterChoix(String sigle) {
 		ArrayList<Choix> listChoixEtudiant = new ArrayList<>();
-		EtudiantDAO etuDAO = new EtudiantDAO();
-		Etudiant etudiant = etuDAO.get(id);
-		if(etudiant != null) {
-			ChoixDAO choixDAO = new ChoixDAO();
-			ArrayList<Choix> list = choixDAO.getList();
-			for(Choix c : list) {
-				if(c.getChoixIdEtudiant()==id)
-					listChoixEtudiant.add(c);
-			}
-			return listChoixEtudiant;
-			
-		}else {
-			JOptionPane.showMessageDialog(new JFrame(), "Erreur ! cet étudiant n'existe pas ", "Dialog",
-					JOptionPane.ERROR_MESSAGE);
+		int id = 0 ;
+		String[] tab = getSigleDominante();
+		for(int i=0; i<tab.length ; i++) {
+			if(sigle.equals(tab[i]))
+				id = i;
 		}
-		return listChoixEtudiant;
 		
+		ChoixDAO choixDAO = new ChoixDAO();
+		ArrayList<Choix> list = choixDAO.getList();
+		for(Choix c : list) {
+			if(c.getChoixIdDominante() == id)
+				listChoixEtudiant.add(c);
+		}
+		
+		return listChoixEtudiant;
 	}
 
 }
